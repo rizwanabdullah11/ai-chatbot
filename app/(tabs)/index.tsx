@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import * as SecureStore from 'expo-secure-store';
 
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { sendMessageToGemini } from '../../components/geminiApi';
@@ -19,6 +21,8 @@ export default function GeminiChatBot() {
   const [apiKey, setApiKey] = useState('');
   const [keyInput, setKeyInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | undefined>();
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
   const flatListRef = useRef<any>(null);
 
   useEffect(() => {
@@ -51,6 +55,80 @@ export default function GeminiChatBot() {
     setMessages(prev => [...prev, botMessage]);
     setIsSending(false);
   };
+
+  async function startRecording() {
+    try {
+      if (permissionResponse?.status !== 'granted') {
+        console.log('Requesting permission..');
+        const resp = await requestPermission();
+        if (resp.status !== 'granted') return;
+      }
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log('Starting recording..');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      console.log('Recording started');
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  }
+
+  async function stopRecording() {
+    if (!recording) return;
+    console.log('Stopping recording..');
+    setRecording(undefined);
+    await recording.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+    });
+    const uri = recording.getURI();
+    console.log('Recording stopped and stored at', uri);
+    if (uri) {
+      sendAudioMessage(uri);
+    }
+  }
+
+  async function sendAudioMessage(uri: string) {
+    setIsSending(true);
+    const now = new Date();
+    const timestr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const userMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = {
+      id: Date.now(),
+      role: 'user',
+      text: '🎤 Voice Message',
+      time: timestr
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    try {
+      const base64Audio = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
+
+      const reply = await sendMessageToGemini('Please listen to this audio and respond.', apiKey, base64Audio);
+
+      const botMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: reply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error sending audio:', error);
+      const errorMessage = { id: Date.now() + 1, role: 'assistant', text: 'Sorry, failed to process audio.', time: timestr } as const;
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsSending(false);
+    }
+  }
 
   const renderMessage = ({ item }: { item: { id: number; role: 'user' | 'assistant'; text: string; time?: string } }) => (
     <MessageBubble text={item.text} role={item.role} time={item.time} />
@@ -137,6 +215,17 @@ export default function GeminiChatBot() {
               multiline
               maxLength={2000}
             />
+
+            <Pressable
+              onPress={recording ? stopRecording : startRecording}
+              style={[
+                styles.iconButton,
+                recording && styles.recordButtonActive
+              ]}
+              disabled={isSending}
+            >
+              <Ionicons name={recording ? "stop" : "mic"} size={22} color={recording ? "#fff" : "#9ca3af"} />
+            </Pressable>
 
             <Pressable
               onPress={sendMessage}
@@ -231,6 +320,13 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     paddingVertical: 8,
   },
+  iconButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
   sendButton: {
     backgroundColor: '#4285f4',
     width: 30,
@@ -248,6 +344,9 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: '#374151',
     shadowOpacity: 0,
+  },
+  recordButtonActive: {
+    backgroundColor: '#ef4444', // Red for recording
   },
   // API Key Setup Styles
   setupContainer: {
