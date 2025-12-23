@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { sendMessageToGemini } from '../../components/geminiApi';
@@ -58,6 +59,10 @@ export default function GeminiChatBot() {
 
   async function startRecording() {
     try {
+      // Stop any current speech
+      if (await Speech.isSpeakingAsync()) {
+        Speech.stop();
+      }
       if (permissionResponse?.status !== 'granted') {
         console.log('Requesting permission..');
         const resp = await requestPermission();
@@ -121,6 +126,9 @@ export default function GeminiChatBot() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMessage]);
+
+      // Speak the response
+      Speech.speak(reply);
     } catch (error) {
       console.error('Error sending audio:', error);
       const errorMessage = { id: Date.now() + 1, role: 'assistant', text: 'Sorry, failed to process audio.', time: timestr } as const;
