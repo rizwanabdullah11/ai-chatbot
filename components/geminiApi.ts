@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyApvkXRlEvbu36hB9z2c8qz09GJTXWQmNM';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyAc7h6wv6LfzdSiQe-oFlwsun6u2jFLcnU';
 
 export async function sendMessageToGemini(message: string, apiKey: string) {
   try {

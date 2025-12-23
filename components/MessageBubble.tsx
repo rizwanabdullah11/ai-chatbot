@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -13,7 +14,11 @@ export default function MessageBubble({ text, role, time, loading }: Props) {
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowBot]}>
-      {!isUser && <View style={styles.diamond} />}
+      {!isUser && (
+        <View style={styles.avatarContainer}>
+          <Ionicons name="sparkles" size={16} color="#4285f4" />
+        </View>
+      )}
 
       <View style={[styles.container, isUser ? styles.userContainer : styles.botContainer]}>
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
@@ -29,28 +34,32 @@ export default function MessageBubble({ text, role, time, loading }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginVertical: 8,
-    paddingHorizontal: 12,
+    alignItems: 'flex-start',
+    marginVertical: 6,
+    paddingHorizontal: 16,
+    width: '100%',
   },
   rowUser: {
     justifyContent: 'flex-end'
   },
   rowBot: {
-    justifyContent: 'center'
+    justifyContent: 'flex-start'
   },
-  diamond: {
-    width: 14,
-    height: 14,
-    backgroundColor: '#2ea5ff',
-    transform: [{ rotate: '45deg' }],
-    marginRight: 12,
-    marginLeft: 6,
-    alignSelf: 'center',
-    borderRadius: 2
+  avatarContainer: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
   },
   container: {
-    maxWidth: '82%'
+    maxWidth: '75%',
+    minWidth: 60,
   },
   userContainer: {
     alignItems: 'flex-end'
@@ -60,39 +69,44 @@ const styles = StyleSheet.create({
   },
   bubble: {
     paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    borderRadius: 18,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   userBubble: {
-    backgroundColor: '#2b2b2b'
+    backgroundColor: '#4285f4',
+    borderBottomRightRadius: 4,
   },
   botBubble: {
-    backgroundColor: 'transparent',
-    borderColor: '#222',
-    borderWidth: 1
+    backgroundColor: '#1a1a1a',
+    borderColor: '#2a2a2a',
+    borderWidth: 1,
+    borderBottomLeftRadius: 4,
   },
   text: {
     fontSize: 15,
-    lineHeight: 20
+    lineHeight: 22,
   },
   userText: {
-    color: '#fff'
+    color: '#ffffff'
   },
   botText: {
-    color: '#ddd'
+    color: '#e5e7eb'
   },
   time: {
     fontSize: 11,
-    color: '#888',
-    marginTop: 6,
-    alignSelf: 'flex-end'
+    color: '#6b7280',
+    marginTop: 4,
+    marginHorizontal: 4,
   },
   loading: {
     marginTop: 6,
-    color: '#999',
-    fontSize: 12
+    color: '#9ca3af',
+    fontSize: 14,
+    letterSpacing: 2,
   }
 });
