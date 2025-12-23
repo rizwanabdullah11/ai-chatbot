@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyAc7h6wv6LfzdSiQe-oFlwsun6u2jFLcnU';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCREjQzrKawpWc3PHhNOPxT8MgElqC7zCE';
 
 export async function sendMessageToGemini(message: string, apiKey: string) {
   try {
@@ -16,7 +16,7 @@ export async function sendMessageToGemini(message: string, apiKey: string) {
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
+          // Authorization: `Bearer ${apiKey}`
         },
         timeout: 20000
       }
