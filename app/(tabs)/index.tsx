@@ -4,7 +4,10 @@ import { Text, View } from '@/components/Themed';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
+import * as Speech from 'expo-speech';
 
 import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +22,7 @@ export default function GeminiChatBot() {
   const [apiKey, setApiKey] = useState('');
   const [keyInput, setKeyInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const flatListRef = useRef<any>(null);
 
   useEffect(() => {
@@ -29,12 +33,17 @@ export default function GeminiChatBot() {
     loadApiKey();
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() || !apiKey) return;
+  const sendMessage = async (text: string = input, audioBase64: string | null = null) => {
+    if ((!text.trim() && !audioBase64) || !apiKey) return;
 
     const now = new Date();
     const timestr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const userMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = { id: Date.now(), role: 'user', text: input, time: timestr };
+    const userMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = {
+      id: Date.now(),
+      role: 'user',
+      text: audioBase64 ? '🎤 Voice Message' : text,
+      time: timestr
+    };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsSending(true);
@@ -42,14 +51,50 @@ export default function GeminiChatBot() {
     // Call Gemini API using axios service (pass stored apiKey)
     let reply = 'No response';
     try {
-      reply = await sendMessageToGemini(input.replace(/\n/g, ' '), apiKey);
+      reply = await sendMessageToGemini(text.replace(/\n/g, ' '), apiKey, audioBase64);
     } catch (e) {
       console.error(e);
       reply = 'Sorry, something went wrong.';
     }
     const botMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = { id: Date.now() + 1, role: 'assistant', text: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setMessages(prev => [...prev, botMessage]);
+
+    // Speak the response
+    Speech.speak(reply);
+
     setIsSending(false);
+  };
+
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') return;
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    setRecording(null);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+
+    if (uri) {
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+      sendMessage('', base64);
+    }
   };
 
   const renderMessage = ({ item }: { item: { id: number; role: 'user' | 'assistant'; text: string; time?: string } }) => (
@@ -138,8 +183,15 @@ export default function GeminiChatBot() {
               maxLength={2000}
             />
 
+            <TouchableOpacity
+              onPress={recording ? stopRecording : startRecording}
+              style={[styles.micButton, recording && styles.micButtonActive]}
+            >
+              <Ionicons name={recording ? "stop" : "mic"} size={20} color={recording ? "#fff" : "#6b7280"} />
+            </TouchableOpacity>
+
             <Pressable
-              onPress={sendMessage}
+              onPress={() => sendMessage(input)}
               style={[styles.sendButton, (!input.trim() || isSending) && styles.sendButtonDisabled]}
               disabled={isSending || !input.trim()}
             >
@@ -303,5 +355,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
+  },
+  micButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+  micButtonActive: {
+    backgroundColor: '#ef4444',
+    borderRadius: 20,
   },
 });

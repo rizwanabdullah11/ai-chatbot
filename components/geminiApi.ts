@@ -1,15 +1,25 @@
 import axios from 'axios';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCREjQzrKawpWc3PHhNOPxT8MgElqC7zCE';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyByAwoPKn7__AOPVwYoclAUgjPiVlp8EHw';
 
-export async function sendMessageToGemini(message: string, apiKey: string) {
+export async function sendMessageToGemini(message: string, apiKey: string, base64Audio: string | null = null) {
   try {
+    const parts: any[] = [{ text: message || (base64Audio ? ' ' : '') }]; // Ensure some text exists if only audio
+
+    if (base64Audio) {
+      parts.push({
+        inlineData: {
+          mimeType: 'audio/m4a',
+          data: base64Audio
+        }
+      });
+    }
     const response = await axios.post(
       GEMINI_API_URL,
       {
         contents: [
           {
-            parts: [{ text: message }]
+            parts: parts
           }
         ]
       },
@@ -18,7 +28,7 @@ export async function sendMessageToGemini(message: string, apiKey: string) {
           'Content-Type': 'application/json',
           // Authorization: `Bearer ${apiKey}`
         },
-        timeout: 20000
+        timeout: 30000
       }
     );
 
