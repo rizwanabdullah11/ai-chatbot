@@ -22,11 +22,19 @@ export default function MessageBubble({ text, role, time, loading }: Props) {
 
       <View style={[styles.container, isUser ? styles.userContainer : styles.botContainer]}>
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-          <Text style={[styles.text, isUser ? styles.userText : styles.botText]}>{text}</Text>
-          {loading ? <Text style={styles.loading}>• • •</Text> : null}
+          {loading ? (
+            <Text style={styles.loading}>• • •</Text>
+          ) : (
+            <Text style={[styles.text, isUser ? styles.userText : styles.botText]}>{text}</Text>
+          )}
         </View>
         {time ? <Text style={styles.time}>{time}</Text> : null}
       </View>
+      {isUser && (
+        <View style={styles.userAvatarContainer}>
+          <Ionicons name="person" size={14} color="#111827" />
+        </View>
+      )}
     </View>
   );
 }
@@ -57,6 +65,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2a2a',
   },
+  userAvatarContainer: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#c7d2fe',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+    marginTop: 4,
+    borderWidth: 0,
+  },
   container: {
     maxWidth: '75%',
     minWidth: 60,
@@ -78,14 +97,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userBubble: {
-    backgroundColor: '#4285f4',
-    borderBottomRightRadius: 4,
+    backgroundColor: '#4f46e5',
+    borderBottomRightRadius: 6,
   },
   botBubble: {
-    backgroundColor: '#1a1a1a',
-    borderColor: '#2a2a2a',
+    backgroundColor: '#0f1724',
+    borderColor: '#111827',
     borderWidth: 1,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 6,
   },
   text: {
     fontSize: 15,
@@ -104,9 +123,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   loading: {
-    marginTop: 6,
+    marginTop: 0,
     color: '#9ca3af',
-    fontSize: 14,
-    letterSpacing: 2,
+    fontSize: 16,
+    letterSpacing: 6,
+    textAlign: 'left',
   }
 });
