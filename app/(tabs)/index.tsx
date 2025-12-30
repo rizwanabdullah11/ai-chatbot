@@ -36,6 +36,9 @@ export default function GeminiChatBot() {
   const sendMessage = async (text: string = input, audioBase64: string | null = null) => {
     if ((!text.trim() && !audioBase64) || !apiKey) return;
 
+    // Stop any current speech
+    Speech.stop();
+
     const now = new Date();
     const timestr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = {
@@ -59,8 +62,10 @@ export default function GeminiChatBot() {
     const botMessage: { id: number; role: 'user' | 'assistant'; text: string; time?: string } = { id: Date.now() + 1, role: 'assistant', text: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setMessages(prev => [...prev, botMessage]);
 
-    // Speak the response
-    Speech.speak(reply);
+    // Speak the response only if the input was audio
+    if (audioBase64) {
+      Speech.speak(reply);
+    }
 
     setIsSending(false);
   };
@@ -163,6 +168,12 @@ export default function GeminiChatBot() {
           showsVerticalScrollIndicator={false}
         />
 
+        {isSending && (
+          <View style={styles.typingWrap}>
+            <MessageBubble text={''} role="assistant" loading />
+          </View>
+        )}
+
         {/* Enhanced Input Area */}
         <View style={styles.inputWrap}>
           <View style={styles.pill}>
@@ -247,7 +258,7 @@ const styles = StyleSheet.create({
   },
   chatContent: {
     paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
   },
   inputWrap: {
     paddingHorizontal: 16,
@@ -363,5 +374,9 @@ const styles = StyleSheet.create({
   micButtonActive: {
     backgroundColor: '#ef4444',
     borderRadius: 20,
+  },
+  typingWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
   },
 });
