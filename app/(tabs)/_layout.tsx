@@ -2,6 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
+import ThemeToggle from '@/components/ThemeToggle';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 
@@ -23,13 +24,14 @@ export default function TabLayout() {
         tabBarStyle: {
           display: 'none', // Hide tab bar for single screen app
         },
-        headerShown: false, // Hide header, we'll use custom header in the screen
+        headerShown: true,
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'ChatBot',
           tabBarIcon: ({ color }) => <TabBarIcon name="comments" color={color} />,
+          headerRight: () => <ThemeToggle />,
         }}
       />
     </Tabs>
